@@ -1,0 +1,93 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          php5-fcgi
+# Required-Start:    $all
+# Required-Stop:     $all
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: PHP FastCGI
+# Description:       PHP FastCGI
+### END INIT INFO
+
+# Author: AITOC <www.aitoc.com>
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="PHP FastCGI"
+NAME=php5-fcgi
+DAEMON=/usr/bin/spawn-fcgi
+FCGI_SOCKET=/var/run/php5-fcgi.sock
+FCGI_USER=www-data
+FCGI_MODE=0600
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=/etc/init.d/$NAME
+DAEMON_ARGS="-s $FCGI_SOCKET -M $FCGI_MODE -u $FCGI_USER -U $FCGI_USER -P $PIDFILE -- /usr/bin/php5-cgi"
+
+[ -x "$DAEMON" ] || exit 0
+
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+. /lib/init/vars.sh
+
+. /lib/lsb/init-functions
+
+do_start()
+{
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec /usr/bin/php5-cgi --test >/dev/null \
+		|| return 1
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
+		$DAEMON_ARGS >/dev/null \
+		|| return 2
+}
+
+do_stop()
+{
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE
+	RETVAL="$?"
+	rm -f $PIDFILE $FCGI_SOCKET
+	return "$RETVAL"
+}
+
+
+case "$1" in
+  start)
+	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+	do_start
+	case "$?" in
+		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
+	;;
+  stop)
+	[ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
+	do_stop
+	case "$?" in
+		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
+	;;
+  status)
+       status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+       ;;
+  restart|force-reload)
+	log_daemon_msg "Restarting $DESC" "$NAME"
+	do_stop
+	case "$?" in
+      0|1)
+		do_start
+		case "$?" in
+			0) log_end_msg 0 ;;
+			1) log_end_msg 1 ;; # Old process is still running
+			*) log_end_msg 1 ;; # Failed to start
+		esac
+		;;
+      *)
+		# Failed to stop
+		log_end_msg 1
+		;;
+	esac
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+	exit 3
+	;;
+esac

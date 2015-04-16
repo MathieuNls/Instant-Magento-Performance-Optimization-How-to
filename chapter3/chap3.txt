@@ -1,0 +1,30 @@
+
+// Delete cache
+
+sudo rm –R /var/www/magento-optimization/var/cache/mage--* 
+
+// Open MySQL conf & Remove the # before general_log_file
+
+sudo nano /etc/mysql/my.cnf
+
+// Restart Mysql
+
+sudo /etc/init.d/mysql restart
+
+// Get MySQLTuner
+
+wget http://mysqltuner.pl mysqltuner.pl
+sudo chmod +x mysqltuner.pl
+./mysqltuner.sql
+
+// Get Tuning Primer
+
+
+wget https://launchpad.net/mysql-tuning-primer/trunk/1.6-r1/+download/tuning-primer.sh
+
+sudo chmod +x tuning-primer.sh
+./tuning-primer.sh
+
+// Optimize table
+
+mysqlcheck -o magento_database_name

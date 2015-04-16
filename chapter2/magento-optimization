@@ -1,0 +1,25 @@
+server {
+  root	   /var/www/magento-optimization;
+  index	   index.php;
+  server_name	localhost;
+  location / {
+    index index.html index.php;
+    try_files $uri $uri/ @handler;
+    expires 30d;
+  }
+  location ~ ^/(app|includes|lib|media/downloadable|pkginfo|report/config.xml|var)/ { internal; }
+  location /var/export/ { internal; }
+  location /. { return 404; }
+  location @handler { rewrite / /index.php; }
+  location ~* .php/ { rewrite ^(.*.php)/ $1 last; }
+  location ~* .php$ {
+    if (!-e $request_filename) { rewrite / /index.php last; }
+    expires off;
+    fastcgi_pass unix:/var/run/php5-fcgi.sock;
+     fastcgi_param SCRIPT_FILENAME /var/www/magento-optimization$fastcgi_script_name;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    fastcgi_param MAGE_RUN_CODE default;
+    fastcgi_param MAGE_RUN_TYPE store;
+    include /etc/nginx/fastcgi_params;
+  }
+}
